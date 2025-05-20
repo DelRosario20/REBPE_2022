@@ -52,3 +52,10 @@ print(missing_values)
 
 # Comprobación rápida
 print(datos.isna().sum())
+
+# Tablas cruzadas
+
+# ANOVA
+
+# TUKEY
+

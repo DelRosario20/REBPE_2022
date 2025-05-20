@@ -267,3 +267,6 @@ if(summary(anova_model2)[[1]]$`Pr(>F)`[1] < 0.05){
 
 
 
+# Exportacion de resultados
+# Exportar tablas cruzadas a CSV - Por confirmar
+
