@@ -1,0 +1,27 @@
+{
+    "id": "039DCCED",
+    "path": "C:/Users/USER/Documents/REBPE_2022/REBPE_2022/SCRIPT_REBPE_2022.R",
+    "project_path": "SCRIPT_REBPE_2022.R",
+    "type": "r_source",
+    "hash": "1882491117",
+    "contents": "",
+    "dirty": false,
+    "created": 1747606371150.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "269,0",
+        "scrollLine": "15"
+    },
+    "folds": "21|77|59|0|\n60|26|78|0|\n80|104|105|0|\n106|101|129|0|\n130|136|153|0|\n154|120|177|0|\n180|109|198|0|\n199|168|219|0|\n222|94|227|2|\n228|138|233|0|\n236|78|241|2|\n242|82|246|0|\n249|81|253|2|\n254|92|259|2|\n262|178|267|0|\n",
+    "lastKnownWriteTime": 1747707405,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1747707405228,
+    "read_only": false,
+    "read_only_alternatives": []
+}
