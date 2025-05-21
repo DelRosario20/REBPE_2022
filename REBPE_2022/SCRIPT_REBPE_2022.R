@@ -11,6 +11,8 @@ library(lubridate) # Para trabajar con fechas
 library(ggplot2) # Para visualización de datos
 library(forcats)
 library(emmeans) # Para comparaciones post-hoc
+library(corrplot)
+library(broom)
 
 # Cargar datos del cantón Ambato (Código 1801) desde archivo CSV.
 datos <- read_csv("C:/Users/USER/Documents/REBPE_2022/Data/Bdd_Datos_Abiertos_REBPE_2022_/rebpe_2022.csv") %>% 
@@ -19,7 +21,7 @@ datos <- read_csv("C:/Users/USER/Documents/REBPE_2022/Data/Bdd_Datos_Abiertos_RE
 # Revisar estructura general
 glimpse(datos)
 
-# Transformación de variables categóricas a factor con etiquetas descriptivas----------------------------------------
+# Transformación de variables categóricas a factor con etiquetas descriptivas-------------------------------------------------------------------------------
 datos2 <- datos %>%
   mutate(
     sexo = factor(sexo, levels = c(1, 2, 3), labels = c("Hombre", "Mujer", "Indeterminado")),
@@ -58,7 +60,7 @@ missing_values <- datos2 %>%
 
 colSums(is.na(datos2)) # Comprobacion rapida. 
 
-# Tratamiento de casos NA -------------------------------------------------
+# Tratamiento de casos NA ----------------------------------------------------------------------------------------------------------------------------------
 # Total de observaciones
 nrow(datos2) # 386275
 
@@ -77,8 +79,10 @@ datos3 <- datos2 %>%
 # Verificación rápida de que ya no quedan NA
 colSums(is.na(datos3))
 
-# Tablas cruzadas -----------------------------------------------------------------------------------------------------------------------------------------------------
-## 1.	Entre las personas con discapacidad del cantón, ¿qué tipo de discapacidad predomina según el sexo?---------------------------------------------------------------
+glimpse(datos3)
+
+# Tablas cruzadas ------------------------------------------------------------------------------------------------------------------------------------------
+## 1.	Entre las personas con discapacidad del cantón, ¿qué tipo de discapacidad predomina según el sexo?----------------------------------------------------
 # Analiza: Considerando los resultados obtenidos, ¿qué implicaciones podría tener la predominancia de cierto tipo de discapacidad en un sexo específico para la política pública local de tu cantón?
 # Filtrar solo personas con discapacidad registrada
 datos_discapacitados <- datos2 %>% filter(tiene_disc == "Sí")
@@ -104,7 +108,7 @@ tabla_sexo_disc %>%
   ) +
   theme_minimal()
 
-## 2.	¿Qué grupo de edad y qué sexo se asocian con una mayor proporción de pensionistas en tu cantón?------------------------------------------------------------------
+## 2.	¿Qué grupo de edad y qué sexo se asocian con una mayor proporción de pensionistas en tu cantón?-------------------------------------------------------
 # Analiza: ¿Qué hipótesis podrías plantear sobre la inserción laboral y los ciclos de vida económica en tu cantón a partir de la distribución de los pensionistas por grupo de edad y sexo?
 # Tablas cruzadas entre grupo de edad y sexo
 # Filtrar solo registros con información sobre pensionistas
@@ -128,7 +132,7 @@ ggplot(tabla_pensionistas, aes(x = grupo_edad, y = total, fill = sexo)) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-## 3.	Entre las personas viudas del cantón, ¿hay diferencias en la edad promedio de viudez entre hombres y mujeres, según grupo de edad?-------------------------------
+## 3.	Entre las personas viudas del cantón, ¿hay diferencias en la edad promedio de viudez entre hombres y mujeres, según grupo de edad?--------------------
 # Analiza: ¿Qué factores sociales o económicos podrían explicar las diferencias en la edad de viudez entre hombres y mujeres en tu cantón?
 # Ya existe una variable que indica la edad de viudez, por lo que no es necesario calcularla. Que es "edad_viud", con esta variable se puede hacer un análisis de la edad promedio de viudez entre hombres y mujeres.
 # Filtrar registros con edad de viudez registrada
@@ -152,7 +156,7 @@ ggplot(tabla_viudez, aes(x = grupo_edad, y = prom_edad_viud, color = sexo, group
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-## 4.	En tu cantón, ¿cómo varía el estado civil entre los distintos grupos de edad y sexo? Presenta los datos y analiza.------------------------------------------------
+## 4.	En tu cantón, ¿cómo varía el estado civil entre los distintos grupos de edad y sexo? Presenta los datos y analiza.------------------------------------
 # Analiza: ¿Qué dinámicas poblacionales o tendencias culturales podrían estar incidiendo en la distribución del estado civil según edad y sexo en tu cantón?
 # Tabla cruzada entre grupo de edad, sexo y estado civil
 tabla_estado_civil <- datos3 %>%
@@ -173,12 +177,8 @@ ggplot(tabla_estado_civil, aes(x = grupo_edad, y = total, fill = e_civil)) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-
-
-
-
-# ANOVA ---------------------------------------------------------------------------------------------------------------------------------------------------------------
-## 1.	¿Existen diferencias en la edad promedio de las personas según su grupo de edad declarado en tu cantón?----------------------------------------------------------
+# ANOVA ----------------------------------------------------------------------------------------------------------------------------------------------------
+## 1.	¿Existen diferencias en la edad promedio de las personas según su grupo de edad declarado en tu cantón?-----------------------------------------------
 # Analiza: ¿En qué medida los grupos etarios reflejan diferencias reales de edad promedio, y qué implicaciones tendría esto para clasificaciones estandarizadas utilizadas en análisis sociales?
 # Verificar supuestos básicos: varianzas y normalidad visual
 boxplot(edad ~ grupo_edad, data = datos3, 
@@ -187,86 +187,81 @@ boxplot(edad ~ grupo_edad, data = datos3,
         ylab = "Edad")
 
 # ANOVA
-anova_model1 <- aov(edad ~ grupo_edad, data = datos3)
-summary(anova_model1)
-
-# Comparaciones post-hoc si es significativo
-if(summary(anova_model1)[[1]]$`Pr(>F)`[1] < 0.05){
-  library(emmeans)
-  posthoc1 <- emmeans(anova_model1, pairwise ~ grupo_edad)
-  print(posthoc1)
-}
+anova_edad <- aov(edad ~ grupo_edad, data = datos3)
+summary(anova_edad)
 
 ## 2.	Entre las personas viudas, ¿la edad promedio de viudez varía según el grupo de edad actual de la persona? (edad_viud, grupo_edad, filtrar solo quienes son viudos)-----
 # Analiza: ¿Qué hipótesis podrías plantear sobre los patrones demográficos y la diferencia en longevidad entre parejas?
 # Filtrar solo personas viudas
-datos_viudos <- datos3 %>% filter(anios_viud > 0)
-
-# Verificar distribución
-boxplot(edad_viud ~ grupo_edad, data = datos_viudos,
-        main = "Edad de Viudez según Grupo Etario Actual",
-        xlab = "Grupo Etario Actual",
-        ylab = "Edad al Enviudar")
-
-# ANOVA
-anova_model2 <- aov(edad_viud ~ grupo_edad, data = datos_viudos)
-summary(anova_model2)
-
-# Comparaciones post-hoc si es significativo
-if(summary(anova_model2)[[1]]$`Pr(>F)`[1] < 0.05){
-  posthoc2 <- emmeans(anova_model2, pairwise ~ grupo_edad)
-  print(posthoc2)
-}
-
+anova_viudez <- aov(edad_viud ~ grupo_edad, data = datos_viudos)
+summary(anova_viudez)
 
 # TUKEY ----------------------------------------------------------------------------------------------------------------------------------------------------
 ## 1.	¿Entre qué grupos de edad se presentan las diferencias más marcadas en la edad promedio?--------------------------------------------------------------
 # Analiza: ¿Estas diferencias confirman la coherencia del sistema de clasificación por grupo etario o evidencian posibles solapamientos o inconsistencias?
+tukey_edad <- TukeyHSD(anova_edad)
+plot(tukey_edad, las = 2, cex.axis = 0.6)
 
-
-
-  
 ## 2.	¿Qué diferencias significativas se observan entre los grupos de edad actual en relación con la edad promedio al momento de enviudar?------------------
 # Analiza: ¿Qué hipótesis pueden explicarse con base en estas diferencias, considerando aspectos como la edad del cónyuge, duración del vínculo y contexto demográfico?
+tukey_viudez <- TukeyHSD(anova_viudez)
+plot(tukey_viudez, las = 2, cex.axis = 0.6)
 
-
-  
-
-
-# Chi-cuadrado ---------------------------------------------------------------------------------------------------------------------------------------------------------
+# Chi-cuadrado ---------------------------------------------------------------------------------------------------------------------------------------------
 ## 1.	¿Existe asociación entre grupo de edad y ser madre o padre en tu cantón?------------------------------------------------------------------------------
 # Analiza: ¿Qué reflexiones podrías hacer sobre la maternidad y paternidad en las distintas etapas de vida a nivel local?
+chi_madre <- chisq.test(table(datos3$grupo_edad, datos3$es_madre))
+chi_padre <- chisq.test(table(datos3$grupo_edad, datos3$es_padre))
 
+tidy(chi_madre)
+tidy(chi_padre)
 
-
-  
-## 2.	¿Hay una asociación entre grupo de edad y tipo de discapacidad en tu cantón?---------------------------------------------------------------------------
+## 2.	¿Hay una asociación entre grupo de edad y tipo de discapacidad en tu cantón?--------------------------------------------------------------------------
 # Analiza: ¿Qué podría sugerir esta relación sobre los ciclos de vida y los riesgos específicos que enfrentan ciertos grupos etarios?
+datos_discapacidad <- datos3 %>% filter(tiene_disc == "Sí")
 
+# Tabla y prueba chi-cuadrado
+datos_disc <- datos3 %>% filter(tiene_disc == "Sí")
+chi_disc <- chisq.test(table(datos_disc$grupo_edad, datos_disc$tipo_disc))
+tidy(chi_disc)
 
-
-
-# Boxplot --------------------------------------------------------------------------------------------------------------------------------------------------------------
-# 1.	¿Cómo varía la edad de las personas pensionistas según el sexo en tu cantón?---------------------------------------------------------------------------
+# Boxplot --------------------------------------------------------------------------------------------------------------------------------------------------
+# 1.	¿Cómo varía la edad de las personas pensionistas según el sexo en tu cantón?--------------------------------------------------------------------------
 # Analiza: ¿Qué observas en cuanto a dispersión o valores extremos? ¿Estas diferencias podrían deberse a trayectorias laborales diferenciadas entre hombres y mujeres?
+pensionistas_data <- datos3 %>% filter(pensionistas == "Sí")
 
+ggplot(pensionistas_data, aes(x = sexo, y = edad, fill = sexo)) +
+  geom_boxplot() +
+  labs(
+    title = "Edad de pensionistas por sexo",
+    x = "Sexo",
+    y = "Edad"
+  ) +
+  theme_minimal()
 
-  
-## 2.	¿Cuál es la distribución de la edad al momento de enviudar según el sexo en tu cantón?-----------------------------------------------------------------
+## 2.	¿Cuál es la distribución de la edad al momento de enviudar según el sexo en tu cantón?----------------------------------------------------------------
 # Analiza: ¿Las diferencias de rango y valores atípicos podrían relacionarse con patrones demográficos, sociales o de salud?
+viudos_data <- datos3 %>% filter(edad_viud > 0)
 
-
-
-  
+ggplot(viudos_data, aes(x = sexo, y = edad_viud, fill = sexo)) +
+  geom_boxplot() +
+  labs(
+    title = "Edad al momento de enviudar según sexo",
+    x = "Sexo",
+    y = "Edad al Enviudar"
+  ) +
+  theme_minimal()
 
 # Correlación -------------------------------------------------------------
 ## 1. Calcula la matriz de correlación entre todas las variables numéricas disponibles en tu cantón. ¿Qué relaciones relevantes o inesperadas se evidencian entre estas variables?-----
 # Analiza: ¿Qué pares de variables parecen estar fuertemente relacionadas y cómo podrías interpretar esa asociación en términos demográficos o sociales?
+numeric_vars <- datos3 %>% 
+  select(edad, anios_viud, edad_viud) %>% 
+  cor(use = "complete.obs")
 
+# Visualización de la matriz de correlación
+corrplot(numeric_vars, method = "color", type = "upper",
+         tl.col = "black", tl.srt = 45, addCoef.col = "black")
 
-
-
-
-# Exportacion de resultados
-# Exportar tablas cruzadas a CSV - Por confirmar
+# Exportacion de resultados---------------------------------------------------
 
