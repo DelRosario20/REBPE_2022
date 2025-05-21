@@ -18,6 +18,7 @@ library(broom)
 datos <- read_csv("C:/Users/USER/Documents/REBPE_2022/Data/Bdd_Datos_Abiertos_REBPE_2022_/rebpe_2022.csv") %>% 
   filter(cant_res == 1801)
 
+datos_ambato <- write_csv(datos, "datos_ambato.csv")
 # Revisar estructura general
 glimpse(datos)
 
